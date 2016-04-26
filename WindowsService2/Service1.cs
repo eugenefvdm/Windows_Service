@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Runtime.InteropServices;
+using System.Net;
+using System.IO.Ports;
 
 public enum ServiceState
 {
@@ -39,12 +41,15 @@ namespace WindowsService2
     {
         public int eventID { get; private set; }
 
+        private SerialPort _serialPort = new SerialPort();
+
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
 
         public Service1(string[] args)
         {
             InitializeComponent();
+
             string eventSourceName = "MySource";
             string logName = "MyNewLog";
 
@@ -81,7 +86,8 @@ namespace WindowsService2
 
             // Set up a timer to trigger every minute.
             System.Timers.Timer timer = new System.Timers.Timer();
-            timer.Interval = 60000; // 60 seconds
+            //timer.Interval = 60000; // 60 seconds
+            timer.Interval = 30000; // 60 seconds
             timer.Elapsed += new System.Timers.ElapsedEventHandler(this.OnTimer);
             timer.Start();
 
@@ -113,7 +119,30 @@ namespace WindowsService2
         public void OnTimer(object sender, System.Timers.ElapsedEventArgs args)
         {
             // TODO: Insert monitoring activities here.
-            eventLog1.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventID++);
+            //eventLog1.WriteEntry("Monitoring the System", EventLogEntryType.Information, eventID);
+
+            string valueOriginal = "Retrieving message...";
+
+            using (WebClient webClient = new System.Net.WebClient())
+            {
+
+                WebClient n = new WebClient();
+                var json = n.DownloadString("http://wh6.snowball.co.za/laravel/public/led");
+                valueOriginal = Convert.ToString(json);
+
+            }
+
+            if (valueOriginal !=  "\"blank\"")
+            {
+                showMessage(valueOriginal);
+            }
+
+            //else
+            //{
+                //var blank = "#1a1W4013                                                                ";
+                //showMessage(blank, false);
+            //}
+           
         }
 
         protected override void OnContinue()
@@ -124,6 +153,42 @@ namespace WindowsService2
         private void eventLog1_EntryWritten(object sender, EntryWrittenEventArgs e)
         {
 
+        }
+
+        private void showMessage(string message, bool log = true)
+        {
+            // Write the entry to the event log
+
+            if (log)
+            {
+                eventLog1.WriteEntry("LED Display: " + message, EventLogEntryType.Information, eventID++);
+            }
+
+            // Write the entry to the COM port
+
+            _serialPort.PortName = "COM1";
+            _serialPort.BaudRate = 9600;
+            _serialPort.DataBits = 8;
+            _serialPort.Parity = Parity.None;
+            _serialPort.StopBits = StopBits.Two;
+            _serialPort.Handshake = Handshake.None;
+
+            _serialPort.Open();
+
+            if (_serialPort.IsOpen)
+            {
+                //eventLog1.WriteEntry("Port opened", EventLogEntryType.Information, eventID++);
+            }
+            else
+            {
+                //eventLog1.WriteEntry("Port did not open!", EventLogEntryType.Information, eventID++);
+            }
+
+            _serialPort.Write(message);
+
+            _serialPort.Close();
+
+            //eventLog1.WriteEntry("The message has been sent", EventLogEntryType.Information, eventID);
         }
 
     }

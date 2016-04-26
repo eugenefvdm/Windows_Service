@@ -39,9 +39,9 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.Description = "A sample service";
-            this.serviceInstaller1.DisplayName = "My New Service Dispaly Name";
-            this.serviceInstaller1.ServiceName = "Service1";
+            this.serviceInstaller1.Description = "A service that lights up the LED display.";
+            this.serviceInstaller1.DisplayName = "LED Service";
+            this.serviceInstaller1.ServiceName = "LedService";
             this.serviceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             this.serviceInstaller1.AfterInstall += new System.Configuration.Install.InstallEventHandler(this.serviceInstaller1_AfterInstall);
             // 
